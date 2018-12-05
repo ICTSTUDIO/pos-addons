@@ -346,11 +346,49 @@
     </t>
 
     <t t-name="PosInvoiceTicket">
-        <div class="pos-sale-ticket">
-            
-            <div class="pos-center-align"><t t-esc="moment().format('L LT')"/> <t t-esc="order.name"/></div>
+        <div class="pos-center-align">
+            <t t-if='receipt.company.logo'>
+                <img t-att-src='receipt.company.logo' />
+                <br/>
+            </t>
+                <t t-if='!receipt.company.logo'>
+                <h1><t t-esc='receipt.company.name' /></h1>
+                <br/>
+                </t>
+                <div font='b'>
+                <t t-if='receipt.company.contact_address'>
+                <div><t t-esc='receipt.company.contact_address' /></div>
+                </t>
+                <t t-if='receipt.company.phone'>
+                <div>Tel:<t t-esc='receipt.company.phone' /></div>
+                </t>
+                <!--<t t-if='receipt.company.vat'>-->
+                <!--<div>VAT:<t t-esc='receipt.company.vat' /></div>-->
+                <!--</t>-->
+                <t t-if='receipt.company.email'>
+                <div><t t-esc='receipt.company.email' /></div>
+                </t>
+                <t t-if='receipt.company.website'>
+                <div><t t-esc='receipt.company.website' /></div>
+                </t>
+                <t t-if='receipt.header_xml'>
+                <t t-raw='receipt.header_xml' />
+                </t>
+                <t t-if='!receipt.header_xml and receipt.header'>
+                <div><t t-esc='receipt.header' /></div>
+                </t>
+                <t t-if='receipt.cashier'>
+                <div class='cashier'>
+                <div>--------------------------------</div>
+                <div>Served by <t t-esc='receipt.cashier' /></div>
+                </div>
+                </t>
+                </div>
+                <br /><br />
+
+
             <br />
-            Payment of Invoice <t t-esc="order.invoice_to_pay.number"/>
+            Betaling van Factuur <t t-esc="order.invoice_to_pay.number"/>
             (<t t-esc="order.invoice_to_pay.origin"/>)<br />
 
             <t t-esc="widget.pos.company.name"/><br />
@@ -419,4 +457,128 @@
         </div>
     </t>
 
+    <t t-name="PosInvoiceXmlTicket">
+
+        <receipt align='center' width='40' value-thousands-separator='' >
+            <t t-if='receipt.company.logo'>
+                <img t-att-src='receipt.company.logo' />
+                <br/>
+            </t>
+            <t t-if='!receipt.company.logo'>
+                <h1><t t-esc='receipt.company.name' /></h1>
+                <br/>
+            </t>
+            <div font='b'>
+                <t t-if='receipt.company.contact_address'>
+                    <div><t t-esc='receipt.company.contact_address' /></div>
+                </t>
+                <t t-if='receipt.company.phone'>
+                    <div>Tel:<t t-esc='receipt.company.phone' /></div>
+                </t>
+                <t t-if='receipt.company.vat'>
+                    <div>VAT:<t t-esc='receipt.company.vat' /></div>
+                </t>
+                <t t-if='receipt.company.email'>
+                    <div><t t-esc='receipt.company.email' /></div>
+                </t>
+                <t t-if='receipt.company.website'>
+                    <div><t t-esc='receipt.company.website' /></div>
+                </t>
+                <t t-if='receipt.header_xml'>
+                    <t t-raw='receipt.header_xml' />
+                </t>
+                <t t-if='!receipt.header_xml and receipt.header'>
+                    <div><t t-esc='receipt.header' /></div>
+                </t>
+                <t t-if='receipt.cashier'>
+                    <div class='cashier'>
+                        <div>--------------------------------</div>
+                        <div>Served by <t t-esc='receipt.cashier' /></div>
+                    </div>
+                </t>
+            </div>
+            <br /><br />
+
+
+            <!-- Subtotal -->
+            <br />
+            Betaling van Factuur <t t-esc="order.invoice_to_pay.number"/>
+            (<t t-esc="order.invoice_to_pay.origin"/>)<br />
+
+            <!-- Subtotal -->
+
+            <t>
+                <line><right>--------</right></line>
+                <line><left>Subtotal</left><right><value t-att-value-decimals='pos.currency.decimals'><t t-esc="order.invoice_to_pay.get_subtotal()" /></value></right></line>
+                <!--<t t-foreach='receipt.tax_details' t-as='tax'>-->
+                    <!--<line>-->
+                        <!--<left><t t-esc='tax.name' /></left>-->
+                        <!--<right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='tax.amount' /></value></right>-->
+                    <!--</line>-->
+                <!--</t>-->
+            </t>
+
+            <!-- Total -->
+
+            <line><right>--------</right></line>
+            <line class='total' size='double-height'>
+                <left><pre>        TOTAL</pre></left>
+                <right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='order.invoice_to_pay.residual' /></value></right>
+            </line>
+            <br/><br/>
+
+            <!-- Payment Lines -->
+
+            <t t-foreach='paymentlines' t-as='line'>
+                <line>
+                    <left><t t-esc='line.name' /></left>
+                    <right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='line.get_amount()'/></value></right>
+                </line>
+            </t>
+            <br/>
+
+            <line size='double-height'>
+                <left><pre>        CHANGE</pre></left>
+                <right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='receipt.change' /></value></right>
+            </line>
+            <br/>
+
+            <!-- Extra Payment Info -->
+            <t>
+                <t t-foreach='order.get_tax_details()' t-as='tax'>
+                    <line>
+                        <left><t t-esc='tax.name' /></left>
+                        <right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='tax.amount' /></value></right>
+                    </line>
+                </t>
+                <line>
+                    <left>Total Taxes</left>
+                    <right><value t-att-value-decimals='pos.currency.decimals'><t t-esc='order.invoice_to_pay.amount_tax'/></value></right>
+                </line>
+            </t>
+
+            <div class='before-footer' />
+
+            <!-- Footer -->
+            <t t-if='receipt.footer_xml'>
+                <t t-raw='receipt.footer_xml' />
+            </t>
+
+            <t t-if='!receipt.footer_xml and receipt.footer'>
+                <br/>
+                <t t-esc='receipt.footer' />
+                <br/>
+                <br/>
+            </t>
+
+            <div class='after-footer' />
+
+            <br/>
+            <div font='b'>
+                <div><t t-esc='receipt.name' /></div>
+                <div><t t-esc='receipt.date.localestring' /></div>
+            </div>
+
+        </receipt>
+    </t>
 </templates>

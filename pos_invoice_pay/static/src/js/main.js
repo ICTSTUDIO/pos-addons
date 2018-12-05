@@ -1074,6 +1074,21 @@ var InvoiceReceiptScreenWidget = screens.ReceiptScreenWidget.extend({
                 paymentlines: order.get_paymentlines(),
             }));
     },
+    print_xml: function() {
+        var order = this.pos.get_order();
+        var env = {
+            widget:this,
+            pos: this.pos,
+            order: order,
+            receipt: order.export_for_printing(),
+            orderlines: order.get_orderlines(),
+            paymentlines: order.get_paymentlines(),
+        };
+        var receipt = QWeb.render('PosInvoiceXmlTicket',env);
+
+        this.pos.proxy.print_receipt(receipt);
+        this.pos.get_order()._printed = true;
+    },
     render_change: function () {
         var order = this.pos.get_order();
         this.$('.change-value').html(this.format_currency(order.invoice_to_pay.get_change()));
