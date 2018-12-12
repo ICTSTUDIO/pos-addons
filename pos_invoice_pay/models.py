@@ -16,9 +16,9 @@ class PosOrder(models.Model):
     def create_from_ui(self, orders):
         invoices_to_pay = [o for o in orders if o.get('data').get('invoice_to_pay')]
         original_orders = [o for o in orders if o not in invoices_to_pay]
-        res = super(PosOrder, self).create_from_ui(original_orders)
+        res = super(PosOrder, self.sudo()).create_from_ui(original_orders)
         if invoices_to_pay:
-            map(self.process_invoice_payment, invoices_to_pay)
+            map(self.sudo().process_invoice_payment, invoices_to_pay)
         return res
 
     @api.model
@@ -34,7 +34,7 @@ class PosOrder(models.Model):
             payment_difference_handling = 'open'
 
             if amount > inv_obj.residual:
-                writeoff_acc_id = self._default_session().config_id.pos_invoice_pay_writeoff_account_id.id
+                writeoff_acc_id = self.sudo()._default_session().config_id.pos_invoice_pay_writeoff_account_id.id
                 payment_difference_handling = 'reconcile'
 
             vals = {
@@ -53,12 +53,12 @@ class PosOrder(models.Model):
                 'paid_by_pos': True,
                 'cashier': cashier
             }
-            payment = self.env['account.payment'].create(vals)
-            payment.post()
+            payment = self.env['account.payment'].sudo().create(vals)
+            payment.sudo().post()
 
     @api.model
     def process_invoices_creation(self, sale_order_id):
-        return self.env['sale.order'].browse(sale_order_id).action_invoice_create()[0]
+        return self.env['sale.order'].sudo().browse(sale_order_id).action_invoice_create()[0]
 
 
 class AccountPayment(models.Model):
@@ -71,14 +71,18 @@ class AccountPayment(models.Model):
 class AccountInvoice(models.Model):
     _inherit = 'account.invoice'
 
+    @api.multi
+    def action_pos_invoice_open(self):
+        return self.sudo().action_invoice_open()
+
     def action_updated_invoice(self):
         message = {'channel': INV_CHANNEL, 'id': self.id}
-        self.env['pos.config'].search([])._send_to_channel(INV_CHANNEL, message)
+        self.env['pos.config'].sudo().search([])._send_to_channel(INV_CHANNEL, message)
 
     @api.model
     def get_invoice_lines_for_pos(self, invoice_ids):
         res = []
-        invoice_lines = self.env['account.invoice.line'].search([('invoice_id', 'in', invoice_ids)])
+        invoice_lines = self.env['account.invoice.line'].sudo().search([('invoice_id', 'in', invoice_ids)])
         for l in invoice_lines:
             line = {
                 'invoice_id': l.invoice_id.id,
@@ -97,7 +101,7 @@ class AccountInvoice(models.Model):
 
     @api.depends('payment_move_line_ids.amount_residual')
     def _get_payment_info_JSON(self):
-        record = self
+        record = self.sudo()
         if len(record) > 1:
             record = record.browse(self.env.context.get('active_id'))
         if record.payment_move_line_ids:
@@ -116,12 +120,12 @@ class SaleOrder(models.Model):
 
     def action_updated_sale_order(self):
         message = {'channel': SO_CHANNEL, 'id': self.id}
-        self.env['pos.config'].search([])._send_to_channel(SO_CHANNEL, message)
+        self.env['pos.config'].sudo().search([])._send_to_channel(SO_CHANNEL, message)
 
     @api.model
     def get_order_lines_for_pos(self, sale_order_ids):
         res = []
-        order_lines = self.env['sale.order.line'].search([('order_id', 'in', sale_order_ids)])
+        order_lines = self.env['sale.order.line'].sudo().search([('order_id', 'in', sale_order_ids)])
         for l in order_lines:
             line = {
                 'order_id': l.order_id.id,
@@ -145,7 +149,7 @@ class PosConfig(models.Model):
     _inherit = 'pos.config'
 
     def _get_default_writeoff_account(self):
-        acc = self.env['account.account'].search([('code', '=', 220000)]).id
+        acc = self.env['account.account'].sudo().search([('code', '=', 220000)]).id
         return acc if acc else False
 
     show_invoices = fields.Boolean(string="Show Invoices in POS", help="Fetch and pay regular invoices", default=True)

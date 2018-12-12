@@ -217,7 +217,7 @@ models.PosModel = models.PosModel.extend({
     validate_invoice: function (id) {
         var result = $.Deferred();
         new Model('account.invoice').
-            call('action_invoice_open', [id]).
+            call('action_pos_invoice_open', [id]).
             then(function (res) {
                 if (res) {
                     result.resolve(id);
