@@ -53,7 +53,7 @@ class PosOrder(models.Model):
 
     @api.model
     def _process_order(self, pos_order):
-        if pos_order.get('returned_order') and not pos_order.get('uid')=='00052-001-0006':
+        if pos_order.get('returned_order'):
             prec_acc = self.env['decimal.precision'].precision_get('Account')
             pos_session = self.env['pos.session'].browse(pos_order['pos_session_id'])
             if pos_session.state == 'closing_control' or pos_session.state == 'closed':

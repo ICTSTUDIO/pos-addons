@@ -3,7 +3,9 @@ from odoo import fields, models, api
 from functools import partial
 from datetime import datetime
 import pytz
+import logging
 
+_logger = logging.getLogger(__name__)
 
 class PosCancelledReason(models.Model):
     _name = "pos.cancelled_reason"
@@ -91,10 +93,10 @@ class PosOrderLineCanceled(models.Model):
     _rec_name = "product_id"
 
     def _order_cancel_line_fields(self, inc_line):
-        if inc_line and isinstance(inc_line, list):
-            if inc_line[2] and 'tax_ids' not in inc_line[2]:
-                product = self.env['product.product'].browse(inc_line[2]['product_id'])
-                inc_line[2]['tax_ids'] = [(6, 0, [x.id for x in product.taxes_id])]
+        _logger.info("IncomingLine: %s", inc_line)
+        if inc_line and inc_line[2] and 'tax_ids' not in inc_line[2]:
+            product = self.env['product.product'].browse(inc_line[2]['product_id'])
+            inc_line[2]['tax_ids'] = [(6, 0, [x.id for x in product.taxes_id])]
         return inc_line
 
     product_id = fields.Many2one('product.product', string='Product', domain=[('sale_ok', '=', True)], required=True, change_default=True, readonly=True)
