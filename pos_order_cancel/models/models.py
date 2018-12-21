@@ -90,11 +90,12 @@ class PosOrderLineCanceled(models.Model):
     _name = "pos.order.line.canceled"
     _rec_name = "product_id"
 
-    def _order_cancel_line_fields(self, line):
-        if line and 'tax_ids' not in line[2]:
-            product = self.env['product.product'].browse(line[2]['product_id'])
-            line[2]['tax_ids'] = [(6, 0, [x.id for x in product.taxes_id])]
-        return line
+    def _order_cancel_line_fields(self, inc_line):
+        if inc_line and isinstance(inc_line, list):
+            if inc_line[2] and 'tax_ids' not in inc_line[2]:
+                product = self.env['product.product'].browse(inc_line[2]['product_id'])
+                inc_line[2]['tax_ids'] = [(6, 0, [x.id for x in product.taxes_id])]
+        return inc_line
 
     product_id = fields.Many2one('product.product', string='Product', domain=[('sale_ok', '=', True)], required=True, change_default=True, readonly=True)
     discount = fields.Float(string='Discount (%)', digits=0, default=0.0, readonly=True)
