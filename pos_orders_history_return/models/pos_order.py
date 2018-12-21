@@ -23,7 +23,7 @@ class PosOrder(models.Model):
         existing_orders = pos_order.read(['pos_reference'])
         existing_references = set([o['pos_reference'] for o in existing_orders])
         orders_to_save = [o for o in orders if o['data']['name'] in existing_references]
-
+        _logger.info("Orders to Save: %s", orders_to_save)
         self.return_from_ui(orders_to_save)
 
         return super(PosOrder, self).create_from_ui(orders)
@@ -58,6 +58,7 @@ class PosOrder(models.Model):
             pos_session = self.env['pos.session'].browse(pos_order['pos_session_id'])
             if pos_session.state == 'closing_control' or pos_session.state == 'closed':
                 pos_order['pos_session_id'] = self._get_valid_session(pos_order).id
+            _logger.info("Pos Order: %s", pos_order)
             order = self.create(self._order_fields(pos_order))
             order.write({'returned_order': True})
             journal_ids = set()
